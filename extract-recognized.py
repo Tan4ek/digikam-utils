@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
-import sqlite3
 import xml.etree.ElementTree as ET
 import subprocess
 import pathlib
 import argparse
-from sqlite3 import Error
+from digikam_common import create_connection
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--digikamdb-path", required=True,
@@ -15,20 +14,12 @@ ap.add_argument("-o", "--out-path", type=str, required=True,
 args = vars(ap.parse_args())
 
 
-def create_connection(db_file):
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except Error as e:
-        print(e)
-    return None
-
-
 def select_tag_ids_user_names(conn):
     cur = conn.cursor()
     cur.execute("SELECT id as tag_id, name as user_name from Tags where pid=23 ")
 
     rows = cur.fetchall()
+    cur.close()
     return rows
 
 
@@ -52,7 +43,9 @@ def select_image_tag_properties(conn):
                      join AlbumRoots as album_root on album_root.id = albums.albumRoot
                      join Tags as tags on tags.id = iprop.tagid
                    where tags.pid = 23;""")
-    return cur.fetchall()
+    image_tag_properties = cur.fetchall()
+    cur.close()
+    return image_tag_properties
 
 
 def extract(digikam4_db_path, out_path):
